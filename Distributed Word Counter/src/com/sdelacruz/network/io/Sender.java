@@ -39,7 +39,7 @@ public class Sender extends Thread {
 	//A queue of SendTask objects, queued for later sending
 	private LinkedBlockingQueue<SendTask> sendQueue;
 	
-	ExecutorService threadpool = Executors.newFixedThreadPool(maxThreads);
+	private ExecutorService threadpool = Executors.newFixedThreadPool(maxThreads);
 	
 	/**
 	 * Constructs a Sender on on a specified port
