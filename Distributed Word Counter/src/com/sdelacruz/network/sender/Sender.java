@@ -6,10 +6,10 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Class depicting a Sender object. When executed, will take requests to send Objects
@@ -36,22 +36,51 @@ public class Sender extends Thread {
 	//Stores a list of active connections, which can be checked to prevent clashes
 	private List<InetAddress> activeConnections;
 	
-	//A list of SendTask objects, queued for later sending
-	private List<SendTask> sendQueue;
+	//A queue of SendTask objects, queued for later sending
+	private LinkedBlockingQueue<SendTask> sendQueue;
 	
 	ExecutorService threadpool = Executors.newFixedThreadPool(maxThreads);
 	
+	/**
+	 * Constructs a Sender on on a specified port
+	 * @param port Port to send requests to
+	 */
 	public Sender(int port){
 		this.port = port;
 		this.activeConnections = new ArrayList<InetAddress>();
-		this.sendQueue = new ArrayList<SendTask>();
+		this.sendQueue = new LinkedBlockingQueue<SendTask>();
 	}
 	
-	
-	public synchronized void send(Object o, InetAddress dest){
+	/**
+	 * Method to send a Serializable Object o over network to InetAddress destination
+	 * Queues the Object for sending, Sender.run() will try to clear queue
+	 * @param o Object to be sent. Must be serializable
+	 * @param dest Destination address for Object to be sent to
+	 */
+	public void send(Object o, InetAddress dest){
 		//Create new SendTask
 		SendTask send = new SendTask(o,dest);
-		this.getSendQueue().add(send);
+		try {
+			this.sendQueue.put(send);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Method to shutdown an active Sender thread.
+	 * Waits for any tasks currently executing to finish before stopping
+	 */
+	public synchronized void shutdown(){
+		//initiate shutdown of threadpool
+		this.threadpool.shutdown();
+		//wait for all connections to be closed
+		while(!this.threadpool.isTerminated());
+		//Interrupt the Sender thread once threadpool is terminated
+		if(this.isAlive())
+		this.interrupt();
+
 	}
 	
 	@Override
@@ -59,26 +88,37 @@ public class Sender extends Thread {
 		
 		//Run as long as the Thread is uninterrupted
 		while(!isInterrupted()){
-			//Check for unsent SendTasks
-			if(!this.getSendQueue().isEmpty()){
+			
+			//Peek at the sendQueue to see if anything is there
+			if(this.sendQueue.peek()!=null){
 				
-				//Create a new collection of SendTask to hold submitted tasks
-				Collection<SendTask> toRemove = new ArrayList<SendTask>();
-				//Iterate over all tasks in a current sendqueue
-				for(SendTask t : this.cloneSendQueue()){
-					//Check that there isn't already a send request for this address
-					if(!this.getActiveConnections().contains(t.address)){
+				SendTask send = null;
+				
+				try {
+					//Read from the queue
+					send = this.sendQueue.take();
+				} catch (InterruptedException e) {
+					//Interrupted while waiting for new send task
+					e.printStackTrace();
+				}
+				
+				if(send!=null){
+					//Check that we aren't already connected to host address
+					if(!this.getActiveConnections().contains(send.address)){
 						//Add the address to list of active connections
-						this.getActiveConnections().add(t.address);
+						this.getActiveConnections().add(send.address);
 						//Start the task
-						this.threadpool.execute(t);
-						//Add task to a collection of SendTasks for later removal from sendQueue
-						toRemove.add(t);
+						this.threadpool.execute(send);
+					}
+					//Otherwise, requeue the task for later sending
+					else{
+						try {
+							this.sendQueue.put(send);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
 					}
 				}
-				//Remove all executed Tasks from the queue
-				this.getSendQueue().removeAll(toRemove);
-				
 			}
 		}
 
@@ -97,30 +137,10 @@ public class Sender extends Thread {
 		return this.activeConnections;
 	}
 	
-	private synchronized List<SendTask> getSendQueue(){
-		return this.sendQueue;
-	}
 	
 	/*
 	 * END - Synchronized private methods
 	 */
-	
-	/*
-	 * Method used to return a cloned List of sendqueue items
-	 */
-	private synchronized List<SendTask> cloneSendQueue(){
-		SendTask[] cloneArray = (SendTask[]) getSendQueue().toArray();
-		List<SendTask> cloneQueue = new ArrayList<SendTask>();
-		
-		for(SendTask t : cloneArray){
-			cloneQueue.add(t);
-		}
-		
-		return cloneQueue;
-		
-	}
-	
-	
 	
 	
 	/**
