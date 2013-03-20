@@ -13,11 +13,17 @@ public class ObjectPoller extends Thread {
 	private ObjectProcessor objProcessor;
 	private BlockingQueue<Object> objectQueue;
 	
+	/**
+	 * Creates a new ObjectPoller, given an ObjectProcessor to submit objects to, and a BlockingQueue to poll
+	 * @param p An ObjectProcessor to submit objects to
+	 * @param q A blockingqueue to poll for new Objects
+	 */
 	public ObjectPoller(ObjectProcessor p, BlockingQueue<Object> q){
 		this.objProcessor = p;
 		this.objectQueue = q;
 	}
 	
+	@Override
 	public void run(){
 		while(!isInterrupted()){
 			
