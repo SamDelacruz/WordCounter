@@ -44,6 +44,8 @@ public class Receiver extends Thread {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		receivedObjects = new LinkedBlockingQueue<Object>();
 	}
 	
 	/**
@@ -51,13 +53,9 @@ public class Receiver extends Thread {
 	 * @return a received Object
 	 */
 	public Object take(){
-		Object o = null;
-		try {
-			o = receivedObjects.take();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		return o;
+
+		return this.receivedObjects.poll();
+		
 	}
 	
 	/**
@@ -71,7 +69,11 @@ public class Receiver extends Thread {
 		while(!this.threadpool.isTerminated());
 		//Interrupt the Receiver thread once threadpool is terminated
 		if(this.isAlive())
-		this.interrupt();
+			try {
+				this.listen.close();
+			} catch (IOException e) {
+				this.interrupt();
+			}
 		
 	}
 	
@@ -83,7 +85,7 @@ public class Receiver extends Thread {
 				Socket s = listen.accept();
 				this.threadpool.execute(new ReceiveTask(s));
 			} catch (IOException e) {
-				e.printStackTrace();
+				this.interrupt();
 			}
 		}
 	}
