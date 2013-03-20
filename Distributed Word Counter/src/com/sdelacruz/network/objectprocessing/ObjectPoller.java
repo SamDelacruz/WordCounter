@@ -23,6 +23,10 @@ public class ObjectPoller extends Thread {
 		this.objectQueue = q;
 	}
 	
+	public ObjectProcessor getObjectProcessor(){
+		return this.objProcessor;
+	}
+	
 	@Override
 	public void run(){
 		while(!isInterrupted()){

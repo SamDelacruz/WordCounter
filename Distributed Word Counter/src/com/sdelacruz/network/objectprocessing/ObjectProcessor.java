@@ -59,7 +59,7 @@ public class ObjectProcessor extends Thread{
 		}
 	}
 	
-public void run() {
+	public void run() {
 		
 		//Run as long as the Thread is uninterrupted
 		while(!isInterrupted()){
