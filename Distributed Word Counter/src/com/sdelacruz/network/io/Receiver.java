@@ -53,7 +53,7 @@ public class Receiver extends Thread {
 	 * Returns an Object from a queue of received objects
 	 * @return a received Object
 	 */
-	public Object take(){
+	public Object poll(){
 
 		Object o = null;
 		try {

@@ -3,6 +3,8 @@ package com.sdelacruz.network.objectprocessing;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import com.sdelacruz.network.io.Receiver;
+
 /**
  * ObjectPoller polls Objects from a Queue, and submits them to an ObjectProcessor to be processed
  * @author Sam Delacruz
@@ -11,31 +13,35 @@ import java.util.concurrent.TimeUnit;
 public class ObjectPoller extends Thread {
 	
 	private ObjectProcessor objProcessor;
-	private BlockingQueue<Object> objectQueue;
+	private Receiver receiver;
 	
 	/**
 	 * Creates a new ObjectPoller, given an ObjectProcessor to submit objects to, and a BlockingQueue to poll
 	 * @param p An ObjectProcessor to submit objects to
 	 * @param q A blockingqueue to poll for new Objects
 	 */
-	public ObjectPoller(ObjectProcessor p, BlockingQueue<Object> q){
+	public ObjectPoller(ObjectProcessor p, Receiver r){
 		this.objProcessor = p;
-		this.objectQueue = q;
+		this.receiver = r;
 	}
 	
 	public ObjectProcessor getObjectProcessor(){
 		return this.objProcessor;
 	}
 	
+	/**
+	 * Method to shutdown an active Pollerthread.
+	 */
+	public synchronized void shutdown(){
+		if(this.isAlive())
+		this.interrupt();
+	}
+	
 	@Override
 	public void run(){
 		while(!isInterrupted()){
 			
-			try {
-				this.objProcessor.process(this.objectQueue.poll(500,TimeUnit.MILLISECONDS));
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			this.objProcessor.process(this.receiver.poll());
 			
 		}
 	}

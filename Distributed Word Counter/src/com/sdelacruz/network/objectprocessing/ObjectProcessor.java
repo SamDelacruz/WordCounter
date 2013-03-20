@@ -6,7 +6,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import com.sdelacruz.network.NetworkController;
+import com.sdelacruz.network.INetworkController;
 
 
 /**
@@ -21,13 +21,13 @@ import com.sdelacruz.network.NetworkController;
 public class ObjectProcessor extends Thread{
 	private int maxThreads = 10;
 	private ProcessTaskFactory pTaskFactory;
-	private NetworkController networkController;
+	private INetworkController networkController;
 	private ExecutorService threadpool;
 	
 	private BlockingQueue<ProcessTask> taskQueue;
 	
 
-	public ObjectProcessor(ProcessTaskFactory f, NetworkController c){
+	public ObjectProcessor(ProcessTaskFactory f, INetworkController c){
 		this.pTaskFactory = f;
 		this.networkController = c;
 		this.taskQueue = new LinkedBlockingQueue<ProcessTask>();
@@ -38,7 +38,7 @@ public class ObjectProcessor extends Thread{
 	 * Public method to return the NetworkController of this ObjectProcessor
 	 * @return NetworkController this ObjectProcessor's NetworkController
 	 */
-	public NetworkController getNetworkController(){
+	public INetworkController getNetworkController(){
 		return this.networkController;
 	}
 	
@@ -57,6 +57,21 @@ public class ObjectProcessor extends Thread{
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	/**
+	 * Method to shutdown an active ObjectProcessor thread.
+	 * Waits for any tasks currently executing to finish before stopping
+	 */
+	public synchronized void shutdown(){
+		//initiate shutdown of threadpool
+		this.threadpool.shutdown();
+		//wait for all connections to be closed
+		while(!this.threadpool.isTerminated());
+		//Interrupt the Sender thread once threadpool is terminated
+		if(this.isAlive())
+		this.interrupt();
+
 	}
 	
 	public void run() {
