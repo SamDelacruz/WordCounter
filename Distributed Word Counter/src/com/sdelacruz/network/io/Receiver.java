@@ -84,6 +84,14 @@ public class Receiver extends Thread {
 		
 	}
 	
+	/**
+	 * Method for setting a new Port to listen on
+	 * @param newPort
+	 */
+	public void setPort(int newPort){
+		this.port = newPort;
+	}
+	
 	public void run(){
 		
 		while(!isInterrupted()){

@@ -84,6 +84,14 @@ public class Sender extends Thread {
 
 	}
 	
+	/**
+	 * Method for setting a new Port to send to
+	 * @param newPort
+	 */
+	public void setPort(int newPort){
+		this.port = newPort;
+	}
+	
 	@Override
 	public void run() {
 		
