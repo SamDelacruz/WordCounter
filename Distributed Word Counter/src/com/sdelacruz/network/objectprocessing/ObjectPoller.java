@@ -1,8 +1,5 @@
 package com.sdelacruz.network.objectprocessing;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
-
 import com.sdelacruz.network.io.Receiver;
 
 /**
