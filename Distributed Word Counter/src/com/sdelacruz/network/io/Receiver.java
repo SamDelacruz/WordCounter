@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Class depicting a Receiver object. When executed, will take requests to receive Objects
@@ -20,7 +21,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * To send an Object to a particular InetAddress, call .send(Object o, InetAddress dest).
  * 
  * @author Sam Delacruz
- * @version 19-03-2013
+ * @version 20-03-2013
  *
  */
 public class Receiver extends Thread {
@@ -54,7 +55,13 @@ public class Receiver extends Thread {
 	 */
 	public Object take(){
 
-		return this.receivedObjects.poll();
+		Object o = null;
+		try {
+			return this.receivedObjects.poll(500,TimeUnit.MILLISECONDS);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		return o;
 		
 	}
 	

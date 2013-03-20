@@ -7,9 +7,11 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Class depicting a Sender object. When executed, will take requests to send Objects
@@ -23,7 +25,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * To send an Object to a particular InetAddress, call .send(Object o, InetAddress dest).
  * 
  * @author Sam Delacruz
- * @version 18-03-2013
+ * @version 20-03-2013
  *
  */
 public class Sender extends Thread {
@@ -37,7 +39,7 @@ public class Sender extends Thread {
 	private List<InetAddress> activeConnections;
 	
 	//A queue of SendTask objects, queued for later sending
-	private LinkedBlockingQueue<SendTask> sendQueue;
+	private BlockingQueue<SendTask> sendQueue;
 	
 	private ExecutorService threadpool = Executors.newFixedThreadPool(maxThreads);
 	
@@ -63,7 +65,6 @@ public class Sender extends Thread {
 		try {
 			this.sendQueue.put(send);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -88,15 +89,12 @@ public class Sender extends Thread {
 		
 		//Run as long as the Thread is uninterrupted
 		while(!isInterrupted()){
-			
-			//Peek at the sendQueue to see if anything is there
-			if(this.sendQueue.peek()!=null){
 				
 				SendTask send = null;
 				
 				try {
 					//Read from the queue
-					send = this.sendQueue.take();
+					send = this.sendQueue.poll(500,TimeUnit.MILLISECONDS);
 				} catch (InterruptedException e) {
 					//Interrupted while waiting for new send task
 					e.printStackTrace();
@@ -119,7 +117,7 @@ public class Sender extends Thread {
 						}
 					}
 				}
-			}
+			
 		}
 
 	}
