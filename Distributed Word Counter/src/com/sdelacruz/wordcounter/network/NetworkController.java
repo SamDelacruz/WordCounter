@@ -22,11 +22,11 @@ public class NetworkController implements INetworkController {
 	private NetworkModel networkModel;
 	private WordCounter wordCounter;
 	
-	public NetworkController(InetAddress master){
+	public NetworkController(int maxWorkersPerBranch, int minWordSendUnit, InetAddress master){
 		this.senders = new HashMap<Integer,Sender>();
 		this.receivers = new HashMap<Integer,Receiver>();
 		this.objectPollers = new HashMap<Receiver, ObjectPoller>();
-		this.networkModel = new NetworkModel(this.startport, master);
+		this.networkModel = new NetworkModel(this.startport, maxWorkersPerBranch, minWordSendUnit, master);
 		this.wordCounter = new WordCounter();
 	}
 	
